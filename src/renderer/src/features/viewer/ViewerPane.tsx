@@ -10,6 +10,13 @@ interface ViewerPaneProps {
   onToggleZoom: () => void
 }
 
+function formatDecodeSupport(value: DecodeSupport): string {
+  if (value === 'supported') return 'Full decode ready'
+  if (value === 'decoding') return 'Decoding full image...'
+  if (value === 'fallback') return 'Embedded RAW preview'
+  return 'Preview'
+}
+
 function formatCaptureDate(value: string | null): string {
   if (!value) return 'Unknown date'
   const date = new Date(value)
@@ -46,7 +53,7 @@ export function ViewerPane({
           </p>
         </div>
         <div className="rv-viewer-meta">
-          <span>Decode: {decodeSupport}</span>
+          <span>Decode: {formatDecodeSupport(decodeSupport)}</span>
           <button onClick={onToggleZoom} type="button">
             {zoomed ? 'Fit (Z)' : 'Zoom 100% (Z)'}
           </button>

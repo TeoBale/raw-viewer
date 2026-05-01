@@ -287,7 +287,7 @@ function App(): React.JSX.Element {
 
       if (event.phase === 'error' && event.imageId === activeId) {
         setViewerDecodeSupport('fallback')
-        setProgressLabel('Decode unsupported, using embedded preview')
+        setProgressLabel('Using embedded RAW preview')
       }
     })
 
