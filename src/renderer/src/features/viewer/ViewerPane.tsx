@@ -6,6 +6,7 @@ interface ViewerPaneProps {
   image: ImageItem | null
   sourcePath: string | null
   decodeSupport: DecodeSupport
+  rotationTurns: number
   zoomed: boolean
   onToggleZoom: () => void
 }
@@ -30,6 +31,7 @@ export function ViewerPane({
   image,
   sourcePath,
   decodeSupport,
+  rotationTurns,
   zoomed,
   onToggleZoom
 }: ViewerPaneProps): React.JSX.Element {
@@ -62,7 +64,12 @@ export function ViewerPane({
 
       <div className={`rv-viewport ${zoomed ? 'is-zoomed' : ''}`}>
         {image && sourcePath ? (
-          <img alt={image.fileName} src={toRawCacheUrl(sourcePath)} />
+          <img
+            alt={image.fileName}
+            className={rotationTurns % 2 === 0 ? '' : 'is-rotated'}
+            src={toRawCacheUrl(sourcePath)}
+            style={{ transform: `rotate(${rotationTurns * 90}deg)` }}
+          />
         ) : (
           <div className="rv-viewer-empty">Open a folder to start culling.</div>
         )}

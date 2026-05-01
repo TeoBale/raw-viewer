@@ -6,6 +6,10 @@ import { useSelection } from './features/selection/useSelection'
 import { ViewerPane } from './features/viewer/ViewerPane'
 
 const PAGE_LIMIT = 5000
+const DEFAULT_DIRECTION_KEY = 'raw-viewer:default-direction'
+const IMAGE_ROTATIONS_KEY = 'raw-viewer:image-rotations'
+
+type PreviewDirection = 'horizontal' | 'vertical'
 
 function updateItemsStatus(items: ImageItem[], ids: Set<string>, status: RawStatus): ImageItem[] {
   return items.map((item) => {
@@ -25,6 +29,20 @@ function replaceItem(items: ImageItem[], nextItem: ImageItem): ImageItem[] {
   return items.map((item) => (item.id === nextItem.id ? nextItem : item))
 }
 
+function computeBaseTurns(item: ImageItem, defaultDirection: PreviewDirection): number {
+  if (!item.width || !item.height) {
+    return 0
+  }
+
+  const isLandscape = item.width >= item.height
+  const wantsLandscape = defaultDirection === 'horizontal'
+  if (isLandscape === wantsLandscape) {
+    return 0
+  }
+
+  return wantsLandscape ? 1 : -1
+}
+
 function App(): React.JSX.Element {
   const [folderPath, setFolderPath] = useState<string | null>(null)
   const [items, setItems] = useState<ImageItem[]>([])
@@ -36,6 +54,22 @@ function App(): React.JSX.Element {
   const [viewerSourcePath, setViewerSourcePath] = useState<string | null>(null)
   const [viewerDecodeSupport, setViewerDecodeSupport] = useState<DecodeSupport>('unknown')
   const [zoomed, setZoomed] = useState(false)
+  const [defaultDirection, setDefaultDirection] = useState<PreviewDirection>(() => {
+    const stored = window.localStorage.getItem(DEFAULT_DIRECTION_KEY)
+    return stored === 'vertical' ? 'vertical' : 'horizontal'
+  })
+  const [imageRotations, setImageRotations] = useState<Record<string, number>>(() => {
+    const stored = window.localStorage.getItem(IMAGE_ROTATIONS_KEY)
+    if (!stored) {
+      return {}
+    }
+
+    try {
+      return JSON.parse(stored) as Record<string, number>
+    } catch {
+      return {}
+    }
+  })
   const pendingXmpSyncRef = useRef<number | null>(null)
 
   const ids = useMemo(() => items.map((item) => item.id), [items])
@@ -57,6 +91,18 @@ function App(): React.JSX.Element {
     () => items.find((item) => item.id === activeId) ?? null,
     [items, activeId]
   )
+  const getRotationTurns = useCallback(
+    (item: ImageItem): number => {
+      const baseTurns = computeBaseTurns(item, defaultDirection)
+      const overrideTurns = imageRotations[item.id] ?? 0
+      return baseTurns + overrideTurns
+    },
+    [defaultDirection, imageRotations]
+  )
+  const activeRotationTurns = activeItem ? getRotationTurns(activeItem) : 0
+  const toggleDefaultDirection = useCallback(() => {
+    setDefaultDirection((current) => (current === 'horizontal' ? 'vertical' : 'horizontal'))
+  }, [])
 
   const loadPage = useCallback(
     async (overrideFolderPath?: string) => {
@@ -186,6 +232,21 @@ function App(): React.JSX.Element {
     [selectedIds, activeId, folderPath]
   )
 
+  const rotateSelection = useCallback(() => {
+    const targetIds = selectedIds.length > 0 ? selectedIds : activeId ? [activeId] : []
+    if (targetIds.length === 0) {
+      return
+    }
+
+    setImageRotations((current) => {
+      const next = { ...current }
+      for (const imageId of targetIds) {
+        next[imageId] = (next[imageId] ?? 0) + 1
+      }
+      return next
+    })
+  }, [selectedIds, activeId])
+
   const moveRejected = useCallback(async () => {
     if (!folderPath) return
 
@@ -260,6 +321,14 @@ function App(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadViewerSource(activeId, zoomed ? 'full' : 'preview')
   }, [activeId, zoomed, loadViewerSource, ensureSelection, activeIndex])
+
+  useEffect(() => {
+    window.localStorage.setItem(DEFAULT_DIRECTION_KEY, defaultDirection)
+  }, [defaultDirection])
+
+  useEffect(() => {
+    window.localStorage.setItem(IMAGE_ROTATIONS_KEY, JSON.stringify(imageRotations))
+  }, [imageRotations])
 
   useEffect(() => {
     const offIndex = window.api.onIndexProgress((event) => {
@@ -350,19 +419,27 @@ function App(): React.JSX.Element {
       if (event.key === '0') {
         event.preventDefault()
         void applyStatus('unrated')
+        return
+      }
+
+      if (event.key.toLowerCase() === 'r') {
+        event.preventDefault()
+        rotateSelection()
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeIndex, items, selectOnly, applyStatus])
+  }, [activeIndex, items, selectOnly, applyStatus, rotateSelection])
 
   return (
     <div className="rv-shell">
       <FolderBar
+        defaultDirection={defaultDirection}
         filterStatus={filterStatus}
         folderPath={folderPath}
         isBusy={isBusy}
+        onDefaultDirectionToggle={toggleDefaultDirection}
         onFilterStatus={setFilterStatus}
         onMoveRejected={moveRejected}
         onPickFolder={pickFolder}
@@ -388,9 +465,13 @@ function App(): React.JSX.Element {
             >
               Unrate (0)
             </button>
+            <button disabled={!activeItem} onClick={rotateSelection} type="button">
+              Rotate (R)
+            </button>
           </div>
           <GalleryGrid
             activeId={activeId}
+            getRotationTurns={getRotationTurns}
             items={items}
             onActivate={activateItem}
             selectedIds={selectedSet}
@@ -401,6 +482,7 @@ function App(): React.JSX.Element {
           decodeSupport={viewerDecodeSupport}
           image={activeItem}
           onToggleZoom={() => setZoomed((current) => !current)}
+          rotationTurns={activeRotationTurns}
           sourcePath={viewerSourcePath}
           zoomed={zoomed}
         />

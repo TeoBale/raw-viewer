@@ -10,6 +10,7 @@ interface GalleryGridProps {
   items: ImageItem[]
   selectedIds: Set<string>
   activeId: string | null
+  getRotationTurns: (item: ImageItem) => number
   onActivate: (id: string, index: number, event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
@@ -18,6 +19,7 @@ interface GalleryCellProps {
   columnCount: number
   selectedIds: Set<string>
   activeId: string | null
+  getRotationTurns: (item: ImageItem) => number
   onActivate: (id: string, index: number, event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
@@ -29,6 +31,7 @@ function GalleryCell({
   columnCount,
   selectedIds,
   activeId,
+  getRotationTurns,
   onActivate
 }: CellComponentProps<GalleryCellProps>): React.JSX.Element {
   const index = rowIndex * columnCount + columnIndex
@@ -40,6 +43,8 @@ function GalleryCell({
 
   const isSelected = selectedIds.has(item.id)
   const isActive = activeId === item.id
+  const rotationTurns = getRotationTurns(item)
+  const rotationDeg = rotationTurns * 90
 
   return (
     <div style={{ ...style, padding: GAP / 2 }}>
@@ -50,7 +55,14 @@ function GalleryCell({
         type="button"
       >
         {item.thumbPath ? (
-          <img alt={item.fileName} loading="lazy" src={toRawCacheUrl(item.thumbPath)} />
+          <div className="rv-tile-media">
+            <img
+              alt={item.fileName}
+              loading="lazy"
+              src={toRawCacheUrl(item.thumbPath)}
+              style={{ transform: `rotate(${rotationDeg}deg)` }}
+            />
+          </div>
         ) : (
           <div className="rv-tile-empty">RAW</div>
         )}
@@ -67,6 +79,7 @@ export function GalleryGrid({
   items,
   selectedIds,
   activeId,
+  getRotationTurns,
   onActivate
 }: GalleryGridProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -93,8 +106,8 @@ export function GalleryGrid({
   const rowCount = Math.ceil(items.length / columnCount)
 
   const cellProps = useMemo(
-    () => ({ items, columnCount, selectedIds, activeId, onActivate }),
-    [items, columnCount, selectedIds, activeId, onActivate]
+    () => ({ items, columnCount, selectedIds, activeId, getRotationTurns, onActivate }),
+    [items, columnCount, selectedIds, activeId, getRotationTurns, onActivate]
   )
 
   return (

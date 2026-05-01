@@ -1,10 +1,14 @@
 import type { RawStatus } from '../../../../shared/contracts'
 
+type PreviewDirection = 'horizontal' | 'vertical'
+
 interface FolderBarProps {
   folderPath: string | null
   filterStatus: RawStatus | 'all'
+  defaultDirection: PreviewDirection
   onPickFolder: () => void
   onFilterStatus: (status: RawStatus | 'all') => void
+  onDefaultDirectionToggle: () => void
   onMoveRejected: () => void
   onSyncXmp: () => void
   isBusy: boolean
@@ -16,8 +20,10 @@ interface FolderBarProps {
 export function FolderBar({
   folderPath,
   filterStatus,
+  defaultDirection,
   onPickFolder,
   onFilterStatus,
+  onDefaultDirectionToggle,
   onMoveRejected,
   onSyncXmp,
   isBusy,
@@ -25,6 +31,12 @@ export function FolderBar({
   selectedCount,
   progressLabel
 }: FolderBarProps): React.JSX.Element {
+  const directionIcon = defaultDirection === 'horizontal' ? '↔' : '↕'
+  const directionTitle =
+    defaultDirection === 'horizontal'
+      ? 'Default direction: Horizontal (click to switch to Vertical)'
+      : 'Default direction: Vertical (click to switch to Horizontal)'
+
   return (
     <header className="rv-topbar">
       <div className="rv-left">
@@ -46,6 +58,12 @@ export function FolderBar({
             <option value="keep">Keep</option>
             <option value="reject">Reject</option>
           </select>
+        </label>
+        <label>
+          Direction
+          <button onClick={onDefaultDirectionToggle} title={directionTitle} type="button">
+            {directionIcon}
+          </button>
         </label>
         <button disabled={isBusy} onClick={onSyncXmp} type="button">
           Sync XMP
