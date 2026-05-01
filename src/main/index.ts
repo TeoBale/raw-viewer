@@ -40,6 +40,8 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  void mainWindow.webContents.setVisualZoomLevelLimits(1, 1)
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }

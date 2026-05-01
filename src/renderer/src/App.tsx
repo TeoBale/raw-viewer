@@ -53,7 +53,7 @@ function App(): React.JSX.Element {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [viewerSourcePath, setViewerSourcePath] = useState<string | null>(null)
   const [viewerDecodeSupport, setViewerDecodeSupport] = useState<DecodeSupport>('unknown')
-  const [zoomed, setZoomed] = useState(false)
+  const [zoomScale, setZoomScale] = useState(1)
   const [defaultDirection, setDefaultDirection] = useState<PreviewDirection>(() => {
     const stored = window.localStorage.getItem(DEFAULT_DIRECTION_KEY)
     return stored === 'vertical' ? 'vertical' : 'horizontal'
@@ -100,6 +100,7 @@ function App(): React.JSX.Element {
     [defaultDirection, imageRotations]
   )
   const activeRotationTurns = activeItem ? getRotationTurns(activeItem) : 0
+  const zoomed = zoomScale > 1.01
   const toggleDefaultDirection = useCallback(() => {
     setDefaultDirection((current) => (current === 'horizontal' ? 'vertical' : 'horizontal'))
   }, [])
@@ -400,7 +401,7 @@ function App(): React.JSX.Element {
 
       if (event.key.toLowerCase() === 'z') {
         event.preventDefault()
-        setZoomed((current) => !current)
+        setZoomScale((current) => (current > 1.01 ? 1 : 2))
         return
       }
 
@@ -481,9 +482,11 @@ function App(): React.JSX.Element {
         <ViewerPane
           decodeSupport={viewerDecodeSupport}
           image={activeItem}
-          onToggleZoom={() => setZoomed((current) => !current)}
+          onToggleZoom={() => setZoomScale((current) => (current > 1.01 ? 1 : 2))}
+          onZoomScaleChange={setZoomScale}
           rotationTurns={activeRotationTurns}
           sourcePath={viewerSourcePath}
+          zoomScale={zoomScale}
           zoomed={zoomed}
         />
       </main>

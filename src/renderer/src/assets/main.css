@@ -273,6 +273,7 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 14px;
+  touch-action: none;
 }
 
 .rv-viewport img {
@@ -291,6 +292,14 @@ button:disabled {
 .rv-viewport.is-zoomed img {
   max-width: none;
   max-height: none;
+}
+
+.rv-viewport.is-zoomed {
+  cursor: grab;
+}
+
+.rv-viewport.is-zoomed.is-dragging {
+  cursor: grabbing;
 }
 
 .rv-viewer-empty {
