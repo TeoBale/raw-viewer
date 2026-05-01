@@ -1,13 +1,32 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow, dialog, ipcMain, protocol, net } from 'electron'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { AppServices } from './services/app-services'
+import {
+  IPC_CHANNELS,
+  type DecodeProgressEvent,
+  type IndexProgressEvent
+} from '../shared/contracts'
+
+let services: AppServices | null = null
+
+function registerRawCacheProtocol(): void {
+  protocol.handle('raw-cache', (request) => {
+    const url = new URL(request.url)
+    const encodedPath = url.pathname.startsWith('/') ? url.pathname.slice(1) : url.pathname
+    const absolutePath = decodeURIComponent(encodedPath)
+    return net.fetch(pathToFileURL(absolutePath).toString())
+  })
+}
 
 function createWindow(): void {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1320,
+    height: 860,
+    minWidth: 1024,
+    minHeight: 720,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -26,8 +45,6 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -35,40 +52,100 @@ function createWindow(): void {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+function emitIndexProgress(event: IndexProgressEvent): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(IPC_CHANNELS.indexProgress, event)
+  }
+}
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+function emitDecodeProgress(event: DecodeProgressEvent): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(IPC_CHANNELS.decodeProgress, event)
+  }
+}
+
+function registerIpc(): void {
+  ipcMain.handle(IPC_CHANNELS.pickFolder, async () => {
+    const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Select RAW Folder',
+      properties: ['openDirectory']
+    })
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return null
+    }
+
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC_CHANNELS.indexFolder, (_, payload) => {
+    if (!services) {
+      throw new Error('Services unavailable')
+    }
+    return services.indexFolder(payload)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.getImagesPage, (_, payload) => {
+    if (!services) {
+      throw new Error('Services unavailable')
+    }
+    return services.getImagesPage(payload)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.getImageSource, (_, payload) => {
+    if (!services) {
+      throw new Error('Services unavailable')
+    }
+    return services.getImageSource(payload)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.setImageStatus, (_, payload) => {
+    if (!services) {
+      throw new Error('Services unavailable')
+    }
+    return services.setImageStatus(payload)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.moveRejected, (_, payload) => {
+    if (!services) {
+      throw new Error('Services unavailable')
+    }
+    return services.moveRejected(payload)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.syncXmp, (_, payload) => {
+    if (!services) {
+      throw new Error('Services unavailable')
+    }
+    return services.syncXmp(payload)
+  })
+}
+
+app.whenReady().then(() => {
+  electronApp.setAppUserModelId('com.rawviewer.app')
+  registerRawCacheProtocol()
+
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  services = new AppServices(emitIndexProgress, emitDecodeProgress)
+  registerIpc()
 
   createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+app.on('before-quit', () => {
+  services?.close()
+})
