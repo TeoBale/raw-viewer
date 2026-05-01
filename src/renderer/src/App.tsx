@@ -54,6 +54,7 @@ function App(): React.JSX.Element {
   const [viewerSourcePath, setViewerSourcePath] = useState<string | null>(null)
   const [viewerDecodeSupport, setViewerDecodeSupport] = useState<DecodeSupport>('unknown')
   const [zoomScale, setZoomScale] = useState(1)
+  const [gridColumnCount, setGridColumnCount] = useState(1)
   const [defaultDirection, setDefaultDirection] = useState<PreviewDirection>(() => {
     const stored = window.localStorage.getItem(DEFAULT_DIRECTION_KEY)
     return stored === 'vertical' ? 'vertical' : 'horizontal'
@@ -377,7 +378,7 @@ function App(): React.JSX.Element {
         return
       }
 
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      if (event.key === 'ArrowRight') {
         event.preventDefault()
         const nextIndex = activeIndex + 1
         if (nextIndex < items.length) {
@@ -388,9 +389,31 @@ function App(): React.JSX.Element {
         return
       }
 
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      if (event.key === 'ArrowLeft') {
         event.preventDefault()
         const nextIndex = activeIndex - 1
+        if (nextIndex >= 0) {
+          const next = items[nextIndex]
+          setActiveId(next.id)
+          selectOnly(next.id, nextIndex)
+        }
+        return
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        const nextIndex = Math.min(items.length - 1, activeIndex + gridColumnCount)
+        if (nextIndex >= 0 && nextIndex < items.length) {
+          const next = items[nextIndex]
+          setActiveId(next.id)
+          selectOnly(next.id, nextIndex)
+        }
+        return
+      }
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        const nextIndex = activeIndex - gridColumnCount
         if (nextIndex >= 0) {
           const next = items[nextIndex]
           setActiveId(next.id)
@@ -431,7 +454,7 @@ function App(): React.JSX.Element {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeIndex, items, selectOnly, applyStatus, rotateSelection])
+  }, [activeIndex, items, selectOnly, applyStatus, rotateSelection, gridColumnCount])
 
   return (
     <div className="rv-shell">
@@ -474,6 +497,7 @@ function App(): React.JSX.Element {
             activeId={activeId}
             getRotationTurns={getRotationTurns}
             items={items}
+            onColumnCountChange={setGridColumnCount}
             onActivate={activateItem}
             selectedIds={selectedSet}
           />

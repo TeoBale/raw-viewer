@@ -11,6 +11,7 @@ interface GalleryGridProps {
   selectedIds: Set<string>
   activeId: string | null
   getRotationTurns: (item: ImageItem) => number
+  onColumnCountChange: (value: number) => void
   onActivate: (id: string, index: number, event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
@@ -80,6 +81,7 @@ export function GalleryGrid({
   selectedIds,
   activeId,
   getRotationTurns,
+  onColumnCountChange,
   onActivate
 }: GalleryGridProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -104,6 +106,10 @@ export function GalleryGrid({
 
   const columnCount = Math.max(1, Math.floor(width / (TILE_SIZE + GAP)))
   const rowCount = Math.ceil(items.length / columnCount)
+
+  useEffect(() => {
+    onColumnCountChange(columnCount)
+  }, [columnCount, onColumnCountChange])
 
   const cellProps = useMemo(
     () => ({ items, columnCount, selectedIds, activeId, getRotationTurns, onActivate }),
