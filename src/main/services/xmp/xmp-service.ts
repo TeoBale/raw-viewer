@@ -13,10 +13,30 @@ export class XmpService {
     let conflicts = 0
 
     for (const row of decisionRows) {
-      const xmpPath = `${row.filePath}.xmp`
+      // Use Adobe standard: filename.xmp instead of filename.ext.xmp
+      const dotIndex = row.filePath.lastIndexOf('.')
+      const basePath = dotIndex !== -1 ? row.filePath.slice(0, dotIndex) : row.filePath
+      const xmpPath = `${basePath}.xmp`
+      const legacyXmpPath = `${row.filePath}.xmp`
 
       try {
         const sidecarStats = await this.safeStat(xmpPath)
+        const legacyStats = await this.safeStat(legacyXmpPath)
+
+        // If legacy exists and is newer, or if only legacy exists, check it for rating
+        if (legacyStats && (!sidecarStats || legacyStats.mtimeMs > sidecarStats.mtimeMs)) {
+          if (legacyStats.mtimeMs > row.updatedAt) {
+            const sidecarRating = await this.readXmpRating(legacyXmpPath)
+            if (sidecarRating !== null) {
+              this.db.setDecisionFromRating(row.imageId, sidecarRating)
+              adoptedFromSidecar += 1
+              conflicts += 1
+              continue
+            }
+          }
+        }
+
+        // Standard path check
         if (sidecarStats && sidecarStats.mtimeMs > row.updatedAt) {
           const sidecarRating = await this.readXmpRating(xmpPath)
           if (sidecarRating !== null) {

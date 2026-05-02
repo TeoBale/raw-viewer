@@ -91,7 +91,7 @@ bun run build:linux
 
 - [ ] Add tooltip to topbar buttons
 - [ ] Move action bar to the bottom
-- [ ] Fix wird XMP behavior wit raw file formats
+- [x] Fix wird XMP behavior wit raw file formats
 - [ ] Fix / improve move to anoder folder / delete feature
 - [ ] Fix wird rotaion issiue on selection change
 - [ ] Fix wird zoom behavior
