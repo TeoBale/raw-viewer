@@ -10,6 +10,7 @@ const PAGE_LIMIT = 5000
 const DEFAULT_DIRECTION_KEY = 'raw-viewer:default-direction'
 const IMAGE_ROTATIONS_KEY = 'raw-viewer:image-rotations'
 const THEME_MODE_KEY = 'raw-viewer:theme-mode'
+const FULL_ROTATION_TURNS = 4
 
 type PreviewDirection = 'horizontal' | 'vertical'
 
@@ -45,6 +46,15 @@ function computeBaseTurns(item: ImageItem, defaultDirection: PreviewDirection): 
   return wantsLandscape ? 1 : -1
 }
 
+function normalizeTurns(turns: number): number {
+  const normalized = turns % FULL_ROTATION_TURNS
+  return normalized < 0 ? normalized + FULL_ROTATION_TURNS : normalized
+}
+
+function getOverrideTurns(rotationMap: Record<string, number>, imageId: string): number {
+  return rotationMap[imageId] ?? 0
+}
+
 function App(): React.JSX.Element {
   const [folderPath, setFolderPath] = useState<string | null>(null)
   const [items, setItems] = useState<ImageItem[]>([])
@@ -71,7 +81,43 @@ function App(): React.JSX.Element {
     }
 
     try {
-      return JSON.parse(stored) as Record<string, number>
+      const parsed = JSON.parse(stored) as Record<string, number>
+      const normalized: Record<string, number> = {}
+      for (const [imageId, turns] of Object.entries(parsed)) {
+        if (typeof turns !== 'number' || Number.isNaN(turns)) {
+          continue
+        }
+        const nextTurns = normalizeTurns(turns)
+        if (nextTurns !== 0) {
+          normalized[imageId] = nextTurns
+        }
+      }
+      return normalized
+    } catch {
+      return {}
+    }
+  })
+  const [imageRotationAnimationTurns, setImageRotationAnimationTurns] = useState<
+    Record<string, number>
+  >(() => {
+    const stored = window.localStorage.getItem(IMAGE_ROTATIONS_KEY)
+    if (!stored) {
+      return {}
+    }
+
+    try {
+      const parsed = JSON.parse(stored) as Record<string, number>
+      const normalized: Record<string, number> = {}
+      for (const [imageId, turns] of Object.entries(parsed)) {
+        if (typeof turns !== 'number' || Number.isNaN(turns)) {
+          continue
+        }
+        const nextTurns = normalizeTurns(turns)
+        if (nextTurns !== 0) {
+          normalized[imageId] = nextTurns
+        }
+      }
+      return normalized
     } catch {
       return {}
     }
@@ -100,12 +146,19 @@ function App(): React.JSX.Element {
   const getRotationTurns = useCallback(
     (item: ImageItem): number => {
       const baseTurns = computeBaseTurns(item, defaultDirection)
-      const overrideTurns = imageRotations[item.id] ?? 0
-      return baseTurns + overrideTurns
+      const overrideTurns = getOverrideTurns(imageRotations, item.id)
+      return normalizeTurns(baseTurns + overrideTurns)
     },
     [defaultDirection, imageRotations]
   )
-  const activeRotationTurns = activeItem ? getRotationTurns(activeItem) : 0
+  const activeRotationTurns = useMemo(() => {
+    if (!activeItem) {
+      return 0
+    }
+    const baseTurns = computeBaseTurns(activeItem, defaultDirection)
+    const overrideTurns = getOverrideTurns(imageRotationAnimationTurns, activeItem.id)
+    return baseTurns + overrideTurns
+  }, [activeItem, defaultDirection, imageRotationAnimationTurns])
   const zoomed = zoomScale > 1.01
   const toggleDefaultDirection = useCallback(() => {
     setDefaultDirection((current) => (current === 'horizontal' ? 'vertical' : 'horizontal'))
@@ -246,6 +299,18 @@ function App(): React.JSX.Element {
     }
 
     setImageRotations((current) => {
+      const next = { ...current }
+      for (const imageId of targetIds) {
+        const turns = normalizeTurns((next[imageId] ?? 0) + 1)
+        if (turns === 0) {
+          delete next[imageId]
+        } else {
+          next[imageId] = turns
+        }
+      }
+      return next
+    })
+    setImageRotationAnimationTurns((current) => {
       const next = { ...current }
       for (const imageId of targetIds) {
         next[imageId] = (next[imageId] ?? 0) + 1

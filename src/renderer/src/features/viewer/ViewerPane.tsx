@@ -222,6 +222,7 @@ export function ViewerPane({
           <img
             alt={image.fileName}
             className={rotationTurns % 2 === 0 ? '' : 'is-rotated'}
+            key={image.id}
             src={toRawCacheUrl(sourcePath)}
             style={
               {

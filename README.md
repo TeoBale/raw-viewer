@@ -93,6 +93,6 @@ bun run build:linux
 - [ ] Move action bar to the bottom
 - [x] Fix wird XMP behavior wit raw file formats
 - [ ] Fix / improve move to anoder folder / delete feature
-- [ ] Fix wird rotaion issiue on selection change
+- [x] Fix wird rotaion issiue on selection change
 - [ ] Fix wird zoom behavior
 - [ ] Improve layout
