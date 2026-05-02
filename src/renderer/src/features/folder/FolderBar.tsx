@@ -1,4 +1,14 @@
 import type { RawStatus } from '../../../../shared/contracts'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  ListFilter,
+  RectangleHorizontal,
+  RectangleVertical,
+  ArrowUpDown,
+  RefreshCcw
+} from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 
 type PreviewDirection = 'horizontal' | 'vertical'
 
@@ -13,7 +23,6 @@ interface FolderBarProps {
   onSyncXmp: () => void
   isBusy: boolean
   total: number
-  selectedCount: number
   progressLabel: string
 }
 
@@ -28,10 +37,9 @@ export function FolderBar({
   onSyncXmp,
   isBusy,
   total,
-  selectedCount,
   progressLabel
 }: FolderBarProps): React.JSX.Element {
-  const directionIcon = defaultDirection === 'horizontal' ? '↔' : '↕'
+  const DirectionIcon = defaultDirection === 'horizontal' ? RectangleHorizontal : RectangleVertical
   const directionTitle =
     defaultDirection === 'horizontal'
       ? 'Default direction: Horizontal (click to switch to Vertical)'
@@ -40,40 +48,61 @@ export function FolderBar({
   return (
     <header className="rv-topbar">
       <div className="rv-left">
-        <button onClick={onPickFolder} type="button">
+        <Button onClick={onPickFolder} size="sm" type="button" variant="secondary">
           {folderPath ? 'Change Folder' : 'Pick Folder'}
-        </button>
+        </Button>
         <span className="rv-folder-path">{folderPath ?? 'No folder selected'}</span>
+        <Badge className="rv-pill" variant="secondary">
+          {total} files
+        </Badge>
       </div>
 
-      <div className="rv-right">
-        <label>
-          Filter
-          <select
-            onChange={(event) => onFilterStatus(event.target.value as RawStatus | 'all')}
-            value={filterStatus}
+      <div className="rv-right" title={progressLabel}>
+        <Select
+          onValueChange={(value) => onFilterStatus(value as RawStatus | 'all')}
+          value={filterStatus}
+        >
+          <SelectTrigger
+            aria-label={`Filter: ${filterStatus}`}
+            className="rv-filter-trigger"
+            showIndicator={false}
+            variant="ghost"
+            size="icon-sm"
+            title={`Filter: ${filterStatus}`}
           >
-            <option value="all">All</option>
-            <option value="unrated">Unrated</option>
-            <option value="keep">Keep</option>
-            <option value="reject">Reject</option>
-          </select>
-        </label>
-        <label>
-          Direction
-          <button onClick={onDefaultDirectionToggle} title={directionTitle} type="button">
-            {directionIcon}
-          </button>
-        </label>
-        <button disabled={isBusy} onClick={onSyncXmp} type="button">
+            <ListFilter size={14} />
+          </SelectTrigger>
+          <SelectContent align="end" className="p-1">
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="unrated">Unrated</SelectItem>
+            <SelectItem value="keep">Keep</SelectItem>
+            <SelectItem value="reject">Reject</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          aria-label={directionTitle}
+          onClick={onDefaultDirectionToggle}
+          size="icon-sm"
+          title={directionTitle}
+          type="button"
+          variant="ghost"
+        >
+          <DirectionIcon size={14} />
+        </Button>
+        <Button disabled={isBusy} onClick={onSyncXmp} size="sm" type="button" variant="outline">
+          <RefreshCcw />
           Sync XMP
-        </button>
-        <button disabled={isBusy} onClick={onMoveRejected} type="button">
+        </Button>
+        <Button
+          disabled={isBusy}
+          onClick={onMoveRejected}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <ArrowUpDown />
           Move Rejected
-        </button>
-        <span className="rv-pill">{total} files</span>
-        <span className="rv-pill">{selectedCount} selected</span>
-        <span className="rv-pill is-progress">{progressLabel}</span>
+        </Button>
       </div>
     </header>
   )

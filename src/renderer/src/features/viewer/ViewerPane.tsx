@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { DecodeSupport, ImageItem } from '../../../../shared/contracts'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { toRawCacheUrl } from '../../utils/asset-url'
 
 interface ViewerPaneProps {
@@ -201,10 +203,10 @@ export function ViewerPane({
           </p>
         </div>
         <div className="rv-viewer-meta">
-          <span>Decode: {formatDecodeSupport(decodeSupport)}</span>
-          <button onClick={onToggleZoom} type="button">
+          <Badge variant="outline">Decode: {formatDecodeSupport(decodeSupport)}</Badge>
+          <Button onClick={onToggleZoom} size="sm" type="button" variant="outline">
             {zoomed ? `Fit (${Math.round(zoomScale * 100)}%)` : 'Zoom 100% (Z)'}
-          </button>
+          </Button>
         </div>
       </header>
 
