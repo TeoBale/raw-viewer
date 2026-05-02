@@ -26,6 +26,7 @@ The starter template has been replaced with a working culling MVP featuring:
 - Electron
 - React
 - TypeScript
+- Tailwind CSS + shadcn/ui (base primitives)
 - better-sqlite3
 - exiftool-vendored
 - sharp
@@ -79,6 +80,7 @@ bun run build:linux
 - `0`: unrated
 - `R`: rotate selection/active image
 - `Z`: toggle fit / zoomed mode
+- `D`: toggle light/dark theme
 
 ## Notes
 

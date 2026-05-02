@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DecodeSupport, ImageItem, RawStatus } from '../../shared/contracts'
+import { Button } from '@/components/ui/button'
 import { FolderBar } from './features/folder/FolderBar'
 import { GalleryGrid } from './features/gallery/GalleryGrid'
 import { useSelection } from './features/selection/useSelection'
@@ -8,6 +9,7 @@ import { ViewerPane } from './features/viewer/ViewerPane'
 const PAGE_LIMIT = 5000
 const DEFAULT_DIRECTION_KEY = 'raw-viewer:default-direction'
 const IMAGE_ROTATIONS_KEY = 'raw-viewer:image-rotations'
+const THEME_MODE_KEY = 'raw-viewer:theme-mode'
 
 type PreviewDirection = 'horizontal' | 'vertical'
 
@@ -55,6 +57,9 @@ function App(): React.JSX.Element {
   const [viewerDecodeSupport, setViewerDecodeSupport] = useState<DecodeSupport>('unknown')
   const [zoomScale, setZoomScale] = useState(1)
   const [gridColumnCount, setGridColumnCount] = useState(1)
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    return window.localStorage.getItem(THEME_MODE_KEY) === 'dark'
+  })
   const [defaultDirection, setDefaultDirection] = useState<PreviewDirection>(() => {
     const stored = window.localStorage.getItem(DEFAULT_DIRECTION_KEY)
     return stored === 'vertical' ? 'vertical' : 'horizontal'
@@ -329,6 +334,11 @@ function App(): React.JSX.Element {
   }, [defaultDirection])
 
   useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkTheme)
+    window.localStorage.setItem(THEME_MODE_KEY, isDarkTheme ? 'dark' : 'light')
+  }, [isDarkTheme])
+
+  useEffect(() => {
     window.localStorage.setItem(IMAGE_ROTATIONS_KEY, JSON.stringify(imageRotations))
   }, [imageRotations])
 
@@ -428,6 +438,12 @@ function App(): React.JSX.Element {
         return
       }
 
+      if (event.key.toLowerCase() === 'd') {
+        event.preventDefault()
+        setIsDarkTheme((current) => !current)
+        return
+      }
+
       if (event.key === '1') {
         event.preventDefault()
         void applyStatus('keep')
@@ -476,22 +492,41 @@ function App(): React.JSX.Element {
       <main className="rv-main">
         <section className="rv-gallery-panel">
           <div className="rv-quick-actions">
-            <button disabled={!activeItem} onClick={() => void applyStatus('keep')} type="button">
-              Keep (1)
-            </button>
-            <button disabled={!activeItem} onClick={() => void applyStatus('reject')} type="button">
-              Reject (X)
-            </button>
-            <button
+            <Button
               disabled={!activeItem}
-              onClick={() => void applyStatus('unrated')}
+              onClick={() => void applyStatus('keep')}
+              size="sm"
               type="button"
             >
+              Keep (1)
+            </Button>
+            <Button
+              disabled={!activeItem}
+              onClick={() => void applyStatus('reject')}
+              size="sm"
+              type="button"
+              variant="destructive"
+            >
+              Reject (X)
+            </Button>
+            <Button
+              disabled={!activeItem}
+              onClick={() => void applyStatus('unrated')}
+              size="sm"
+              type="button"
+              variant="secondary"
+            >
               Unrate (0)
-            </button>
-            <button disabled={!activeItem} onClick={rotateSelection} type="button">
+            </Button>
+            <Button
+              disabled={!activeItem}
+              onClick={rotateSelection}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
               Rotate (R)
-            </button>
+            </Button>
           </div>
           <GalleryGrid
             activeId={activeId}

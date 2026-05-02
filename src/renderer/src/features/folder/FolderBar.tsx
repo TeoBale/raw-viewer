@@ -1,4 +1,13 @@
 import type { RawStatus } from '../../../../shared/contracts'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
 type PreviewDirection = 'horizontal' | 'vertical'
 
@@ -40,40 +49,61 @@ export function FolderBar({
   return (
     <header className="rv-topbar">
       <div className="rv-left">
-        <button onClick={onPickFolder} type="button">
+        <Button onClick={onPickFolder} size="sm" type="button" variant="secondary">
           {folderPath ? 'Change Folder' : 'Pick Folder'}
-        </button>
+        </Button>
         <span className="rv-folder-path">{folderPath ?? 'No folder selected'}</span>
       </div>
 
       <div className="rv-right">
-        <label>
-          Filter
-          <select
-            onChange={(event) => onFilterStatus(event.target.value as RawStatus | 'all')}
+        <div className="rv-control">
+          <span className="rv-control-label">Filter</span>
+          <Select
+            onValueChange={(value) => onFilterStatus(value as RawStatus | 'all')}
             value={filterStatus}
           >
-            <option value="all">All</option>
-            <option value="unrated">Unrated</option>
-            <option value="keep">Keep</option>
-            <option value="reject">Reject</option>
-          </select>
-        </label>
-        <label>
-          Direction
-          <button onClick={onDefaultDirectionToggle} title={directionTitle} type="button">
-            {directionIcon}
-          </button>
-        </label>
-        <button disabled={isBusy} onClick={onSyncXmp} type="button">
+            <SelectTrigger className="rv-filter-select" size="sm">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="unrated">Unrated</SelectItem>
+              <SelectItem value="keep">Keep</SelectItem>
+              <SelectItem value="reject">Reject</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          aria-label={directionTitle}
+          onClick={onDefaultDirectionToggle}
+          size="sm"
+          title={directionTitle}
+          type="button"
+          variant="outline"
+        >
+          {directionIcon}
+        </Button>
+        <Button disabled={isBusy} onClick={onSyncXmp} size="sm" type="button" variant="outline">
           Sync XMP
-        </button>
-        <button disabled={isBusy} onClick={onMoveRejected} type="button">
+        </Button>
+        <Button
+          disabled={isBusy}
+          onClick={onMoveRejected}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
           Move Rejected
-        </button>
-        <span className="rv-pill">{total} files</span>
-        <span className="rv-pill">{selectedCount} selected</span>
-        <span className="rv-pill is-progress">{progressLabel}</span>
+        </Button>
+        <Badge className="rv-pill" variant="secondary">
+          {total} files
+        </Badge>
+        <Badge className="rv-pill" variant="secondary">
+          {selectedCount} selected
+        </Badge>
+        <Badge className="rv-pill is-progress" variant="outline">
+          {progressLabel}
+        </Badge>
       </div>
     </header>
   )
