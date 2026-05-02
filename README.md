@@ -86,3 +86,13 @@ bun run build:linux
 
 - This project is currently optimized for macOS workflow and trackpad interaction.
 - Full RAW decode support depends on codec/backend support; embedded preview fallback is intentional when full decode is unavailable.
+
+## Todo
+
+- [ ] Add tooltip to topbar buttons
+- [ ] Move action bar to the bottom
+- [ ] Fix wird XMP behavior wit raw file formats
+- [ ] Fix / improve move to anoder folder / delete feature
+- [ ] Fix wird rotaion issiue on selection change
+- [ ] Fix wird zoom behavior
+- [ ] Improve layout
