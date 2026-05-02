@@ -354,6 +354,61 @@ body.rv-macos {
   font-size: 1.125rem;
 }
 
+.rv-viewer-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rv-viewer-info-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid color-mix(in oklab, var(--border) 72%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.rv-viewer-info-trigger:hover,
+.rv-viewer-info-trigger:focus-visible,
+.rv-viewer-info-trigger[data-popup-open] {
+  color: var(--foreground);
+  border-color: var(--border);
+  background: color-mix(in oklab, var(--muted) 70%, transparent);
+}
+
+.rv-viewer-info-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.rv-viewer-info-card {
+  max-width: 16rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-md);
+  padding: 0.5rem 0.625rem;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.rv-viewer-info-card strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 0.2rem;
+}
+
+.rv-viewer-info-card p {
+  margin: 0;
+  font-size: 12px;
+}
+
 .rv-viewer-head p {
   margin: 2px 0 0;
   color: var(--muted-foreground);

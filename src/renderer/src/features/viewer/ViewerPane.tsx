@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { DecodeSupport, ImageItem } from '../../../../shared/contracts'
-import { Badge } from '@/components/ui/badge'
+import { PreviewCard } from '@base-ui/react/preview-card'
 import { Button } from '@/components/ui/button'
+import { Info } from 'lucide-react'
 import { toRawCacheUrl } from '../../utils/asset-url'
 
 interface ViewerPaneProps {
@@ -71,6 +72,43 @@ export function ViewerPane({
     zoomScaleRef.current = zoomScale
     onZoomScaleChangeRef.current = onZoomScaleChange
   }, [zoomScale, onZoomScaleChange])
+
+  const syncViewportScroll = useCallback((): void => {
+    const viewport = viewportRef.current
+    if (!viewport) {
+      return
+    }
+
+    if (zoomScaleRef.current <= 1.001) {
+      viewport.scrollLeft = 0
+      viewport.scrollTop = 0
+      if (dragStartRef.current) {
+        dragStartRef.current = null
+        setIsDragging(false)
+      }
+      return
+    }
+
+    const maxScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+    const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight)
+    viewport.scrollLeft = Math.min(maxScrollLeft, Math.max(0, viewport.scrollLeft))
+    viewport.scrollTop = Math.min(maxScrollTop, Math.max(0, viewport.scrollTop))
+  }, [])
+
+  useEffect(() => {
+    syncViewportScroll()
+  }, [zoomScale, image?.id, sourcePath, rotationTurns, syncViewportScroll])
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) {
+      return
+    }
+
+    const observer = new ResizeObserver(() => syncViewportScroll())
+    observer.observe(viewport)
+    return () => observer.disconnect()
+  }, [syncViewportScroll])
 
   useEffect(() => {
     const viewport = viewportRef.current
@@ -195,7 +233,28 @@ export function ViewerPane({
     <section className="rv-viewer">
       <header className="rv-viewer-head">
         <div>
-          <h2>{title}</h2>
+          <div className="rv-viewer-title-row">
+            <h2>{title}</h2>
+            <PreviewCard.Root>
+              <PreviewCard.Trigger
+                aria-label="Decode information"
+                className="rv-viewer-info-trigger"
+                closeDelay={120}
+                delay={150}
+                render={<button type="button" />}
+              >
+                <Info size={14} />
+              </PreviewCard.Trigger>
+              <PreviewCard.Portal>
+                <PreviewCard.Positioner align="start" side="right" sideOffset={8}>
+                  <PreviewCard.Popup className="rv-viewer-info-card">
+                    <strong>Decode</strong>
+                    <p>{formatDecodeSupport(decodeSupport)}</p>
+                  </PreviewCard.Popup>
+                </PreviewCard.Positioner>
+              </PreviewCard.Portal>
+            </PreviewCard.Root>
+          </div>
           <p>
             {image
               ? `${formatCaptureDate(image.captureDate)} · f/${image.aperture ?? '-'} · ${image.shutter ?? '-'}`
@@ -203,7 +262,6 @@ export function ViewerPane({
           </p>
         </div>
         <div className="rv-viewer-meta">
-          <Badge variant="outline">Decode: {formatDecodeSupport(decodeSupport)}</Badge>
           <Button onClick={onToggleZoom} size="sm" type="button" variant="outline">
             {zoomed ? `Fit (${Math.round(zoomScale * 100)}%)` : 'Zoom 100% (Z)'}
           </Button>

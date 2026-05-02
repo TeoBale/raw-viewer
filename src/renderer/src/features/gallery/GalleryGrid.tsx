@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Grid, type CellComponentProps } from 'react-window'
+import { Grid, type CellComponentProps, useGridRef } from 'react-window'
 import type { ImageItem } from '../../../../shared/contracts'
 import { toRawCacheUrl } from '../../utils/asset-url'
 
@@ -85,6 +85,7 @@ export function GalleryGrid({
   onActivate
 }: GalleryGridProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const gridRef = useGridRef(null)
   const [width, setWidth] = useState(640)
   const [height, setHeight] = useState(560)
 
@@ -93,9 +94,11 @@ export function GalleryGrid({
     if (!container) return
 
     const updateSize = (): void => {
-      const rect = container.getBoundingClientRect()
-      setWidth(Math.max(360, Math.floor(rect.width)))
-      setHeight(Math.max(220, Math.floor(rect.height)))
+      const styles = window.getComputedStyle(container)
+      const paddingX = Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight)
+      const paddingY = Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom)
+      setWidth(Math.max(360, Math.floor(container.clientWidth - paddingX)))
+      setHeight(Math.max(220, Math.floor(container.clientHeight - paddingY)))
     }
 
     updateSize()
@@ -111,6 +114,25 @@ export function GalleryGrid({
     onColumnCountChange(columnCount)
   }, [columnCount, onColumnCountChange])
 
+  useEffect(() => {
+    if (!activeId) {
+      return
+    }
+
+    const index = items.findIndex((item) => item.id === activeId)
+    if (index < 0) {
+      return
+    }
+
+    gridRef.current?.scrollToCell({
+      rowIndex: Math.floor(index / columnCount),
+      columnIndex: index % columnCount,
+      rowAlign: 'auto',
+      columnAlign: 'auto',
+      behavior: 'auto'
+    })
+  }, [activeId, items, columnCount, gridRef])
+
   const cellProps = useMemo(
     () => ({ items, columnCount, selectedIds, activeId, getRotationTurns, onActivate }),
     [items, columnCount, selectedIds, activeId, getRotationTurns, onActivate]
@@ -125,6 +147,7 @@ export function GalleryGrid({
         columnWidth={Math.floor(width / columnCount)}
         defaultHeight={560}
         defaultWidth={960}
+        gridRef={gridRef}
         overscanCount={2}
         rowCount={rowCount}
         rowHeight={TILE_SIZE + GAP}
