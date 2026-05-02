@@ -485,7 +485,6 @@ function App(): React.JSX.Element {
         onPickFolder={pickFolder}
         onSyncXmp={syncXmp}
         progressLabel={progressLabel}
-        selectedCount={selectedIds.length}
         total={total}
       />
 

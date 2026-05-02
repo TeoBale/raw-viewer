@@ -2,12 +2,13 @@ import type { RawStatus } from '../../../../shared/contracts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
+  ListFilter,
+  RectangleHorizontal,
+  RectangleVertical,
+  ArrowUpDown,
+  RefreshCcw
+} from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 
 type PreviewDirection = 'horizontal' | 'vertical'
 
@@ -22,7 +23,6 @@ interface FolderBarProps {
   onSyncXmp: () => void
   isBusy: boolean
   total: number
-  selectedCount: number
   progressLabel: string
 }
 
@@ -37,10 +37,9 @@ export function FolderBar({
   onSyncXmp,
   isBusy,
   total,
-  selectedCount,
   progressLabel
 }: FolderBarProps): React.JSX.Element {
-  const directionIcon = defaultDirection === 'horizontal' ? '↔' : '↕'
+  const DirectionIcon = defaultDirection === 'horizontal' ? RectangleHorizontal : RectangleVertical
   const directionTitle =
     defaultDirection === 'horizontal'
       ? 'Default direction: Horizontal (click to switch to Vertical)'
@@ -53,37 +52,45 @@ export function FolderBar({
           {folderPath ? 'Change Folder' : 'Pick Folder'}
         </Button>
         <span className="rv-folder-path">{folderPath ?? 'No folder selected'}</span>
+        <Badge className="rv-pill" variant="secondary">
+          {total} files
+        </Badge>
       </div>
 
-      <div className="rv-right">
-        <div className="rv-control">
-          <span className="rv-control-label">Filter</span>
-          <Select
-            onValueChange={(value) => onFilterStatus(value as RawStatus | 'all')}
-            value={filterStatus}
+      <div className="rv-right" title={progressLabel}>
+        <Select
+          onValueChange={(value) => onFilterStatus(value as RawStatus | 'all')}
+          value={filterStatus}
+        >
+          <SelectTrigger
+            aria-label={`Filter: ${filterStatus}`}
+            className="rv-filter-trigger"
+            showIndicator={false}
+            variant="ghost"
+            size="icon-sm"
+            title={`Filter: ${filterStatus}`}
           >
-            <SelectTrigger className="rv-filter-select" size="sm">
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="unrated">Unrated</SelectItem>
-              <SelectItem value="keep">Keep</SelectItem>
-              <SelectItem value="reject">Reject</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <ListFilter size={14} />
+          </SelectTrigger>
+          <SelectContent align="end" className="p-1">
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="unrated">Unrated</SelectItem>
+            <SelectItem value="keep">Keep</SelectItem>
+            <SelectItem value="reject">Reject</SelectItem>
+          </SelectContent>
+        </Select>
         <Button
           aria-label={directionTitle}
           onClick={onDefaultDirectionToggle}
-          size="sm"
+          size="icon-sm"
           title={directionTitle}
           type="button"
-          variant="outline"
+          variant="ghost"
         >
-          {directionIcon}
+          <DirectionIcon size={14} />
         </Button>
         <Button disabled={isBusy} onClick={onSyncXmp} size="sm" type="button" variant="outline">
+          <RefreshCcw />
           Sync XMP
         </Button>
         <Button
@@ -93,17 +100,9 @@ export function FolderBar({
           type="button"
           variant="outline"
         >
+          <ArrowUpDown />
           Move Rejected
         </Button>
-        <Badge className="rv-pill" variant="secondary">
-          {total} files
-        </Badge>
-        <Badge className="rv-pill" variant="secondary">
-          {selectedCount} selected
-        </Badge>
-        <Badge className="rv-pill is-progress" variant="outline">
-          {progressLabel}
-        </Badge>
       </div>
     </header>
   )

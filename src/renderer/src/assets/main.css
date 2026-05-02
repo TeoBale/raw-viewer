@@ -100,6 +100,10 @@ body.rv-macos {
   }
 
   body {
+    @apply selection:bg-pink-200 selection:text-black;
+  }
+
+  body {
     margin: 0;
     overflow: hidden;
     color: var(--foreground);
@@ -174,8 +178,8 @@ body.rv-macos {
   font-size: 0.75rem;
 }
 
-.rv-filter-select {
-  min-width: 7.25rem;
+.rv-filter-trigger {
+  border-radius: min(var(--radius-md), 10px);
 }
 
 .rv-folder-path {

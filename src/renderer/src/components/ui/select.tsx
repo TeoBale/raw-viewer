@@ -1,10 +1,34 @@
 import * as React from 'react'
 import { Select as SelectPrimitive } from '@base-ui/react/select'
+import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react'
 
 const Select = SelectPrimitive.Root
+
+const selectTriggerVariants = cva(
+  "flex w-fit items-center justify-between gap-1.5 rounded-md text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default:
+          'border border-input bg-transparent shadow-xs dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40',
+        ghost:
+          'border border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground dark:hover:bg-muted/50'
+      },
+      size: {
+        default: 'h-9 py-2 pr-2 pl-2.5',
+        sm: 'h-8 py-1.5 pr-2 pl-2.5',
+        'icon-sm': 'size-8 justify-center p-0'
+      }
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default'
+    }
+  }
+)
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props): React.JSX.Element {
   return (
@@ -28,26 +52,29 @@ function SelectValue({ className, ...props }: SelectPrimitive.Value.Props): Reac
 
 function SelectTrigger({
   className,
+  variant = 'default',
   size = 'default',
+  showIndicator = true,
   children,
   ...props
 }: SelectPrimitive.Trigger.Props & {
-  size?: 'sm' | 'default'
+  variant?: VariantProps<typeof selectTriggerVariants>['variant']
+  size?: VariantProps<typeof selectTriggerVariants>['size']
+  showIndicator?: boolean
 }): React.JSX.Element {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
-      className={cn(
-        "flex w-fit items-center justify-between gap-1.5 rounded-md border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
+      className={cn(selectTriggerVariants({ variant, size }), className)}
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon
-        render={<ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />}
-      />
+      {showIndicator ? (
+        <SelectPrimitive.Icon
+          render={<ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />}
+        />
+      ) : null}
     </SelectPrimitive.Trigger>
   )
 }
